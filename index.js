@@ -71,12 +71,26 @@ const duplicateCheck = async (name) => {
 app.post("/api/profiles", async (req, res) => {
   const { name } = req.body;
   const nameInsensitive = name.toLowerCase();
+  // Missing or Empty Name Error Handling
+  if (!name || name.trim() === "") {
+    return res.status(400).send({
+      status: "error",
+      message: "Missing Name or Empty Name",
+    });
+  }
+  // Numeric Name Error Handling
+  if (typeof name !== "string") {
+    return res.status(422).send({
+      status: "error",
+      message: "Numeric Name instead of String",
+    });
+  }
   const { data, error } = await duplicateCheck(nameInsensitive);
   if (data.length >= 1) {
-    return res.send({
+    return res.status(201).send({
       status: "success",
       message: "Profile already exists",
-      data: data,
+      data: data[0],
     });
   }
 
@@ -88,7 +102,7 @@ app.post("/api/profiles", async (req, res) => {
     const { gender, probability, count } = genderDetails;
     const sample_size = count;
     if (gender === null || count === 0) {
-      return res.status(502).send({
+      return res.status(400).send({
         status: "error",
         message: `${externalApi} returned an invalid response`,
       });
@@ -104,7 +118,7 @@ app.post("/api/profiles", async (req, res) => {
         message: `${externalApi} returned an invalid response`,
       });
     }
-    let age_group;
+    let age_group = "";
     if (age <= 12) {
       age_group = "child";
     } else if (age >= 13 && age <= 19) {
@@ -119,7 +133,7 @@ app.post("/api/profiles", async (req, res) => {
     externalApi = "Nationalize";
     const countryDetails = await nationalizeApi(name);
     const firstCountry = countryDetails.country[0];
-    if (countryDetails.length === 0) {
+    if (firstCountry.country === null || undefined) {
       return res.status(502).send({
         status: "error",
         message: `${externalApi} returned an invalid response`,
