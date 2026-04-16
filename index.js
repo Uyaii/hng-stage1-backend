@@ -70,7 +70,6 @@ const duplicateCheck = async (name) => {
 
 app.post("/api/profiles", async (req, res) => {
   const { name } = req.body;
-  const nameInsensitive = name.toLowerCase();
   // Missing or Empty Name Error Handling
   if (!name || name.trim() === "") {
     return res.status(400).send({
@@ -85,6 +84,8 @@ app.post("/api/profiles", async (req, res) => {
       message: "Numeric Name instead of String",
     });
   }
+
+  const nameInsensitive = name.toLowerCase();
   const { data, error } = await duplicateCheck(nameInsensitive);
   if (data.length >= 1) {
     return res.status(201).send({
@@ -132,13 +133,14 @@ app.post("/api/profiles", async (req, res) => {
     // * NATIONALIZE
     externalApi = "Nationalize";
     const countryDetails = await nationalizeApi(name);
-    const firstCountry = countryDetails.country[0];
-    if (firstCountry.country === null || undefined) {
+
+    if (!countryDetails.country || countryDetails.country.length === 0) {
       return res.status(502).send({
         status: "error",
         message: `${externalApi} returned an invalid response`,
       });
     }
+    const firstCountry = countryDetails.country[0];
 
     const extractedData = {
       id: uuidv7(),
